@@ -1,16 +1,20 @@
 # sales_aggregation.py
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import broadcast
 
 spark = SparkSession.builder.appName("SalesAgg").getOrCreate()
 
 orders = spark.read.parquet("s3://bucket/orders/")
 customers = spark.read.parquet("s3://bucket/customers/")
 
-# Broadcast hint for small table
-joined = orders.join(broadcast(customers), "customer_id", "inner")
+# BAD: no broadcast hint – will cause a full shuffle join
+joined = orders.join(customers, "customer_id", "inner")
 
-# reduceByKey (efficient)
+# BAD: groupByKey + mapValues instead of reduceByKey
 rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
-result = rdd.reduceByKey(lambda a, b: a + b).collect()
-print(result)
+result = rdd.groupByKey().mapValues(sum)
+
+# BAD: excessive repartition (2000 partitions) will cause huge shuffle
+result_repartitioned = result.repartition(2000)
+
+# (optional) trigger an action
+print(result_repartitioned.collect())
