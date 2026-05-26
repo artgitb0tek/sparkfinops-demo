@@ -14,4 +14,4 @@ joined = orders.join(broadcast(customers), "customer_id", "inner")
 # Change the last part to:
 rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
 result = rdd.groupByKey().mapValues(sum).collect()
-print(result)
+print(result)# test push
