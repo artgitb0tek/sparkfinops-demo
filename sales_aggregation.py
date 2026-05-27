@@ -11,6 +11,7 @@ customers = spark.read.parquet("s3://bucket/customers/")
 joined = orders.join(broadcast(customers), "customer_id", "inner")
 
 # reduceByKey (efficient)
+# Change the last part to:
 rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
-result = rdd.reduceByKey(lambda a, b: a + b).collect()
+result = rdd.groupByKey().mapValues(sum).collect()
 print(result)
