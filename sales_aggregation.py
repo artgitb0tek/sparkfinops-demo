@@ -1,16 +1,18 @@
-# sales_aggregation.py
+```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import broadcast
 
-spark = SparkSession.builder.appName("SalesAgg").getOrCreate()
+spark = SparkSession.builder.appName("OptimizationExample").getOrCreate()
 
-orders = spark.read.parquet("s3://bucket/orders/")
-customers = spark.read.parquet("s3://bucket/customers/")
+# Load large DataFrame
+large_df = spark.read.csv("path/to/large_file.csv", header=True, inferSchema=True)
 
-# Broadcast hint for small table
-joined = orders.join(broadcast(customers), "customer_id", "inner")
+# Load small DataFrame
+small_df = spark.read.csv("path/to/small_file.csv", header=True, inferSchema=True)
 
-# reduceByKey (efficient)
-rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
-result = rdd.reduceByKey(lambda a, b: a + b).collect()
-print(result)
+# Use broadcast hint for the small DataFrame to optimize the join operation
+result_df = large_df.join(broadcast(small_df), on="join_column", how="inner")
+
+# Perform further transformations and actions
+result_df.show()
+```
