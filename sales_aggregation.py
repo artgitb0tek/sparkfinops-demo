@@ -10,9 +10,9 @@ large_df = spark.read.csv("path/to/large_file.csv", header=True, inferSchema=Tru
 # Load small DataFrame
 small_df = spark.read.csv("path/to/small_file.csv", header=True, inferSchema=True)
 
-# Optimize join operation using broadcast hint
+# Use broadcast hint for the small DataFrame to optimize the join operation
 result_df = large_df.join(broadcast(small_df), on="join_column", how="inner")
 
-# Show result
+# Perform further transformations and actions
 result_df.show()
 ```
