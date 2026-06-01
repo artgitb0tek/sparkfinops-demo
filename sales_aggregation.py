@@ -1,16 +1,18 @@
-# sales_aggregation.py
+```python
+from pyspark import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import broadcast
 
-spark = SparkSession.builder.appName("SalesAgg").getOrCreate()
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
 
-orders = spark.read.parquet("s3://bucket/orders/")
-customers = spark.read.parquet("s3://bucket/customers/")
+# Load data
+large_rdd = sc.textFile("path/to/large_file.txt")
+small_rdd = sc.textFile("path/to/small_file.txt")
 
-# Broadcast hint for small table
-joined = orders.join(broadcast(customers), "customer_id", "inner")
+# Perform join operation with broadcasting
+small_rdd_broadcasted = broadcast(small_rdd.collectAsMap())
+joined_rdd = large_rdd.map(lambda x: (x.split(",")[0], x)).join(small_rdd_broadcasted.value)
 
-# reduceByKey (efficient)
-rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
-result = rdd.reduceByKey(lambda a, b: a + b).collect()
-print(result)
+# Further processing...
+```
