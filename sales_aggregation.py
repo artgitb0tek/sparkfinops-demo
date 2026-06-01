@@ -1,19 +1,18 @@
 ```python
 from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
+from pyspark.sql.functions import broadcast
 
 spark = SparkSession.builder.appName("OptimizationExample").getOrCreate()
 
-# Load data into DataFrames
+# Load large DataFrame
 large_df = spark.read.csv("path/to/large_file.csv", header=True, inferSchema=True)
+
+# Load small DataFrame
 small_df = spark.read.csv("path/to/small_file.csv", header=True, inferSchema=True)
 
-# Broadcast the small DataFrame
-small_df_broadcast = spark.sparkContext.broadcast(small_df.collect())
+# Perform join operation with broadcast
+result_df = large_df.join(broadcast(small_df), on="join_key", how="inner")
 
-# Perform the join using built-in functions
-result_df = large_df.join(F.broadcast(small_df), large_df["join_key"] == small_df["join_key"])
-
-# Show the result
+# Show result
 result_df.show()
 ```
