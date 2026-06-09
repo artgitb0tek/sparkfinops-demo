@@ -1,15 +1,13 @@
 # sales_aggregation.py
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 spark = SparkSession.builder.appName("SalesAgg").getOrCreate()
 
 orders = spark.read.parquet("s3://bucket/orders/")
 customers = spark.read.parquet("s3://bucket/customers/")
 
-# BAD: missing broadcast hint – causes expensive shuffle join
-joined = orders.join(customers, "customer_id", "inner")
+joined = orders.join(F.broadcast(customers), "customer_id", "inner")
 
-# BAD: groupByKey + mapValues instead of reduceByKey
-rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
-result = rdd.groupByKey().mapValues(sum).collect()
+result = joined.groupBy("product_id").agg(F.sum("amount")).collect()
 print(result)
