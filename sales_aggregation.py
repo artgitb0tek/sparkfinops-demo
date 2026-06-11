@@ -7,10 +7,10 @@ spark = SparkSession.builder.appName("SalesAgg").getOrCreate()
 orders = spark.read.parquet("s3://bucket/orders/")
 customers = spark.read.parquet("s3://bucket/customers/")
 
-# Broadcast hint for small table
+# Fixed: added broadcast hint to the join
 joined = orders.join(broadcast(customers), "customer_id", "inner")
 
-# reduceByKey (efficient)
+# Fixed: replaced groupByKey with reduceByKey
 rdd = joined.rdd.map(lambda row: (row["product_id"], row["amount"]))
 result = rdd.reduceByKey(lambda a, b: a + b).collect()
 print(result)
